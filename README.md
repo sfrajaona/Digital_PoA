@@ -6,20 +6,11 @@ attorney protocol.
 
 ---
 
-## Installation
-
-1. Download **PRISM-games** from the official website:
-   [https://www.prismmodelchecker.org/games/download.php](https://www.prismmodelchecker.org/games/download.php)
-
-2. Follow the installation guide here:
-   [https://www.prismmodelchecker.org/games/installation.php](https://www.prismmodelchecker.org/games/installation.php)
-
 ## Requirements
 
 - Java 8 or higher
 - Compatible OS: Windows, Linux, or macOS
-- PRISM-games installed and configured
-
+- PRISM-games installed and configured. See [https://www.prismmodelchecker.org/games/download.php](https://www.prismmodelchecker.org/games/download.php).
 
 ---
 
@@ -59,6 +50,6 @@ attorney protocol.
   * **Log**
 
 ---
-## 📫 Contact
+## Contact
 Contact the maintainer: sfrajaona@gmail.com
 
