@@ -1,6 +1,6 @@
 // List of properties for modelSimple.prism
 // Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
-// Last modified: September 1, 2025
+// Last modified: Sep 01, 2025
 // Overview: Model checking strategic properties of PoA (Power of Attorney) 
 
 // Property Name: Liveness to Enactment 1 (original) 
@@ -53,7 +53,7 @@ A [ G act1_executed_A=>act1_permit_for_A_by_D ]
 // Description: Issued and allowed implies that, unless revoked, there exists a strategy for the
 // coalition A \cup V to achieve execution:
 
-// FALSE: End to end correctness  1 (original)
+// TRUE: End to end correctness  1 (original + all players + bound conditions)
 filter(exists, <<D,A1,V,L>>P>0 [ X act1_executed_A ], act1_requested_A&act1_permit_for_A_by_D&!revoked_A_by_D&(req_total+2<req_max)&(idling+2<idle_max))
 
 // TRUE: End-to-end correctness 2 (modified the outer AG into EG) 
@@ -68,10 +68,10 @@ filter(forall, <<D,A1,L,V>>P>0 [ F act1_executed_A ], act1_requested_A & act1_gr
 
 // // TRUE:  End to end correctness 
 // // Description: original, but fixed the guards 
-filter (forall, <<A1,V>> P>0 F [act2_executed_A], act2_authorised &!revoked_A_by_D & act2_requested_A) 
+filter (forall, <<A1,V>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
 
 // FALSE:  End to end correctness
 // // Description:  original, but fixed the guards, 
 // Description: the property fails when V is not part of the strategic opertor
-filter (forall, <<A1>> P>0 F [act2_executed_A], act2_authorised &!revoked_A_by_D & act2_requested_A) 
+filter (forall, <<A1>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
 
