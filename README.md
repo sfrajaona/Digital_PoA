@@ -6,7 +6,7 @@ attorney protocol.
 
 ---
 
-## 🚀 Installation
+## Installation
 
 1. Download **PRISM-games** from the official website:
    [https://www.prismmodelchecker.org/games/download.php](https://www.prismmodelchecker.org/games/download.php)
@@ -14,7 +14,7 @@ attorney protocol.
 2. Follow the installation guide here:
    [https://www.prismmodelchecker.org/games/installation.php](https://www.prismmodelchecker.org/games/installation.php)
 
-## 🛠️ Requirements
+## Requirements
 
 - Java 8 or higher
 - Compatible OS: Windows, Linux, or macOS
@@ -23,7 +23,7 @@ attorney protocol.
 
 ---
 
-## 🖥️ Usage with PRISM-games GUI
+## Usage with PRISM-games GUI
 
 ### 1. Launch the PRISM-games GUI
 
@@ -36,7 +36,7 @@ attorney protocol.
 
 * In the GUI, go to the **Model** menu → **Open model**.
 * Select the file: `modelSimple.prism`.
-* The model should appear in the right pane. If parsed successfully, a green checkmark will appear next to the model name in the left pane.
+* The model should appear in the right pane. If parsed successfully, a checkmark ✅ will appear next to the model name in the left pane.
 * Confirm that the model type is shown as **csg** (concurrent stochastic game).
 
 ---
