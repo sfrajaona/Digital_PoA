@@ -1,0 +1,147 @@
+// Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
+// Last modified: Sep 01, 2025
+
+// Overview: Model checking strategic properties of PoA (Power of Attorney) 
+// Model components: 
+// - 1 donor D
+// - 1 attorney A1
+// - 1 verifier V 
+// - 1 legal party L
+// - 1 unspecified object o of D 
+// - 2 actions act1 and act2 applicable on o
+// - the donor D loses its permissions after delegating 
+// - a delegation covers both actions act1 and act2 on object o
+csg
+
+player D D_register, D_idle endplayer
+
+player A1 A_verify, A_register, A_enact endplayer
+
+player L L_register endplayer
+
+player V V_verify, V_enact endplayer
+
+
+const int req_max = 8;
+const int idle_max = 10;
+
+module D_register
+  [request_deleg_D_to_A] (!A_leg_att_of_D) & (!revoked_A_by_D) & (req_total<req_max) & (!deleg_D_to_A_requested) -> true;
+  [request_revoke_A_by_D] (A_leg_att_of_D) & (!revoke_D_to_A_requested) & (!revoked_A_by_D)-> true;
+endmodule
+
+module A_register
+  [sign_deleg_D_to_A] (deleg_D_to_A_requested) & (!deleg_D_to_A_signed) -> true ;
+endmodule
+
+module L_register
+  A_leg_att_of_D : bool init false;
+  revoked_A_by_D : bool init false;
+  [register_deleg_D_to_A] deleg_D_to_A_signed & (!revoked_A_by_D) & !A_leg_att_of_D -> (A_leg_att_of_D'=true); 
+  [register_revoke_D_to_A] revoke_D_to_A_requested & A_leg_att_of_D & !revoked_A_by_D -> (A_leg_att_of_D'=false)&(revoked_A_by_D'=true); 
+endmodule
+
+module L_register_sync
+  // L's extra module for registration phase -- but outside player L
+  // the variables that records the delegation requests by D, signature by A, 
+  // cannot be inside player L's module (L_enact) 
+  // because they are both modified by outside players D and A 
+  delegreq : [0..req_max]  init 0;
+  deleg_D_to_A_requested : bool init false; 
+  revoke_D_to_A_requested : bool init false; 
+  deleg_D_to_A_signed : bool init false;
+  [request_deleg_D_to_A] true -> (deleg_D_to_A_requested'=true) & (delegreq'=delegreq+1) ; 
+  [request_revoke_A_by_D]  true -> (revoke_D_to_A_requested'=true)& (delegreq'=delegreq+1); 
+  [sign_deleg_D_to_A] true -> (deleg_D_to_A_signed'=true) ;
+  [register_deleg_D_to_A] true ->(deleg_D_to_A_requested' = false) & (deleg_D_to_A_signed' = false) ;
+endmodule
+
+
+module A_verify
+  [request_to_verify_A_of_D] (A_leg_att_of_D) & (!verif_A_att_of_D_requested) -> true;
+endmodule
+
+module V_verify_sync_A
+  verif_A_att_of_D_requested : bool init false;
+  [request_to_verify_A_of_D] true -> (verif_A_att_of_D_requested'=true);
+endmodule
+
+module V_verify 
+  act1_permit_for_D : bool init true;
+  act2_permit_for_D : bool init true;
+  
+  act1_permit_for_A_by_D : bool init false;
+  act2_permit_for_A_by_D : bool init false;
+  
+  verified_A_of_D : bool init false;
+  
+  [verify_A_of_D] (verif_A_att_of_D_requested)&(A_leg_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D) -> (act1_permit_for_A_by_D'=act1_permit_for_D) & (act2_permit_for_A_by_D'=act2_permit_for_D) & (verified_A_of_D'=true) & (act1_permit_for_D'=false) & (act2_permit_for_D'=false) ;
+
+  [verify_A_not_att_of_D] (revoked_A_by_D)&(!A_leg_att_of_D) &(!verified_A_of_D)-> (act1_permit_for_A_by_D'=false) & (verified_A_of_D'=true) & (act2_permit_for_A_by_D'=false) & (act1_permit_for_D'=act1_permit_for_A_by_D) & (act2_permit_for_D'=act1_permit_for_A_by_D);
+endmodule
+
+// We define the following prediates that will be used in the next module
+// V accepts an act request from A if 
+// - there is a permit for it (issued) 
+// - or there is not an action under execution, or 
+// - or there has been a revocation (not revoked) 
+formula act1_grant_cond = (act1_permit_for_A_by_D & !act1_authorised_A & !revoked_A_by_D);
+formula act2_grant_cond = (act2_permit_for_A_by_D & !act2_authorised_A & !revoked_A_by_D);
+
+// Similarly V rejects an act request from A if 
+// - there is no permit for it 
+// - or there is already an action under execution, or 
+// - or there has been a revocation
+module V_enact
+
+
+  act1_authorised_A : bool init false;
+  act2_authorised_A : bool init false;
+  act1_rejected_A : bool init false;
+  act2_rejected_A : bool init false;
+
+  act1_executed_A : bool init false;
+  act2_executed_A : bool init false;
+
+  [grant_act1_A] act1_requested_A & act1_grant_cond & !act1_authorised_A  -> (act1_authorised_A'=true);
+  [grant_act2_A] act2_requested_A & act2_grant_cond & !act2_authorised_A -> (act2_authorised_A'=true);
+  [reject_act1_A] act1_requested_A & !act1_grant_cond & !act1_rejected_A -> (act1_rejected_A'=true);
+  [reject_act2_A] act2_requested_A & !act2_grant_cond & !act2_rejected_A -> (act2_rejected_A'=true);
+  [execute_act1_A] act1_authorised_A & !revoked_A_by_D & act1_requested_A ->  (act1_executed_A'=true); 
+  [execute_act2_A] act2_authorised_A & !revoked_A_by_D & act2_requested_A ->  (act2_executed_A'=true); 
+  [reset_act1_A] (act1_rejected_A | act1_executed_A) & act1_requested_A -> (act1_rejected_A'=false) & (act1_executed_A'=false); 
+  [reset_act2_A] (act2_rejected_A | act2_executed_A) & act2_requested_A -> (act2_rejected_A'=false) & (act2_executed_A'=false); 
+endmodule 
+
+formula req_total = act_req_A + delegreq;
+formula act_requested_A = act1_requested_A | act2_requested_A;
+formula executed_A = act1_executed_A | act2_executed_A;
+formula authorised_A = act1_authorised_A | act2_authorised_A;
+
+// formula idling = idling_A + idling_D;
+formula idling = idling_D;
+
+module D_idle
+  idling_D : [1..10] init 0; 
+  [idle_D] idling <= idle_max -> (idling_D'=idling_D+1); 
+endmodule
+
+module A_enact // A's module for enacting phase -- inside player A
+// A initiates action requests, but it is V who records these requests in the module below
+// and A can only make requests to V, if V hasn't got a pending request from A
+  [request_act1_A] !act_requested_A & req_total<req_max-> true; 
+  [request_act2_A] !act_requested_A & req_total<req_max-> true; 
+endmodule
+
+module V_enact_sync_A // V's module for enacting phase -- but outside player V
+// the variables that records the requests by A cannot be inside player V's module (V_enact) 
+// because they are both modified by A (who initiates a request) and by V 
+// (who resets the request after an execution or a rejection) 
+  act_req_A : [1..100] init 0;  // this is for bounding the model
+  act1_requested_A : bool init false;
+  act2_requested_A : bool init false;
+  [request_act1_A] true -> (act1_requested_A'=true) &(act_req_A'=act_req_A+1);
+  [request_act2_A] true -> (act2_requested_A'=true) &(act_req_A'=act_req_A+1);
+  [reset_act1_A] true -> (act1_requested_A'=false); 
+  [reset_act2_A] true -> (act2_requested_A'=false); 
+endmodule
