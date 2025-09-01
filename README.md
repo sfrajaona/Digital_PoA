@@ -10,7 +10,7 @@ attorney protocol.
 
 - Java 8 or higher
 - Compatible OS: Windows, Linux, or macOS
-- PRISM-games installed and configured. See [https://www.prismmodelchecker.org/games/download.php](https://www.prismmodelchecker.org/games/download.php).
+- PRISM-games installed. See [https://www.prismmodelchecker.org/games/download.php](https://www.prismmodelchecker.org/games/download.php).
 
 ---
 
