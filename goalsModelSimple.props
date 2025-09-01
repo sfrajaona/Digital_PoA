@@ -18,14 +18,15 @@ filter(forall, A [ F act1_executed_A ], act1_requested_A&act1_permit_for_A_by_D&
 filter(exists, E [ F act1_executed_A ], act1_requested_A&act1_permit_for_A_by_D&!revoked_A_by_D)
 
 // TRUE: Liveness to Enactment 3 (authorised capture the condisions above)
+// Description: changed AF into EF
 filter(exists, E [ F act1_executed_A ], act1_authorised_A)
 
 // FALSE: Liveness to Enactment 5
-// Description: for any execution
+// Description: for any execution, with inner EF
 filter(forall, E [ F executed_A ], act_requested_A&authorised_A)
 
 // FALSE: Liveness to Enactment 5
-// Description: for any execution + bound condition
+// Description: for any execution + bound condition + inner EF
 filter(forall, E [ F executed_A ], act_requested_A&authorised_A&(req_total+1<req_max))
 
 // Property Name: Safety under Revocation: 
@@ -34,7 +35,7 @@ filter(forall, E [ F executed_A ], act_requested_A&authorised_A&(req_total+1<req
 // FALSE: Safety under Revocation 1 (original) . 
 filter(forall, A [ G (!executed_A) ], revoked_A_by_D)
 
-// TRUE: Safety under Revocation 2 (original) 
+// *** TRUE: Safety under Revocation 2 (original) 
 // Description: we needed to strengthen the antecedent, to make sure there is no execution happening simultaneously with the revocation
 filter(forall, A [ G (!executed_A) ], revoked_A_by_D&(!executed_A))
 
@@ -43,10 +44,10 @@ filter(forall, A [ G (!executed_A) ], revoked_A_by_D&(!executed_A))
 // Description: Execution can only happen if (i) the contract was issued and (ii) not revoked
 // at the decision point 
 
-// TRUE: No "out of nothing" execution 1
+// *** TRUE: No "out of nothing" execution 1
 A [ G executed_A=>verified_A_of_D ]
 
-// TRUE: No "out of nothing" execution 2
+// *** TRUE: No "out of nothing" execution 2
 A [ G act1_executed_A=>act1_permit_for_A_by_D ]
 
 // Property name: End-to-end correctness
@@ -66,12 +67,11 @@ filter(forall, <<A1,V>>P>0 [ F act1_executed_A ], !act1_executed_A&act1_requeste
 // Description: original + bound conditions + all players in strategy
 filter(forall, <<D,A1,L,V>>P>0 [ F act1_executed_A ], act1_requested_A & act1_grant_cond & !act1_authorised_A & (req_total+2<req_max) & (idling+2<idle_max))
 
-// // TRUE:  End to end correctness 
-// // Description: original, but fixed the guards 
+// *** TRUE:  End to end correctness 
+// Description: original, but fixed the guards 
 filter (forall, <<A1,V>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
 
-// FALSE:  End to end correctness
-// // Description:  original, but fixed the guards, 
+// *** FALSE:  End to end correctness
 // Description: the property fails when V is not part of the strategic opertor
 filter (forall, <<A1>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
 
