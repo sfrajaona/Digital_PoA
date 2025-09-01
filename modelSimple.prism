@@ -2,6 +2,7 @@
 // Last modified: Sep 01, 2025
 
 // Overview: Model checking strategic properties of PoA (Power of Attorney) 
+
 // Model components: 
 // - 1 donor D
 // - 1 attorney A1
@@ -11,6 +12,15 @@
 // - 2 actions act1 and act2 applicable on o
 // - the donor D loses its permissions after delegating 
 // - a delegation covers both actions act1 and act2 on object o
+
+// Modelling approach (ASYNCHRONOUS actions):
+// - Each party has a player definition, and one or several modules inside the player definition
+// - Some players has modules outside their player definition, for updating variables
+// according their to other players actions
+// - players acts concurrently but asynchronously, 
+// - guards in the form of boolean variables ensure the correct scheduling
+// of the phases: e.g., L cannot register a delegation, unless A has signed it,
+// and A cannot sign a delegation unless, D has requested it 
 csg
 
 player D D_register, D_idle endplayer
@@ -41,7 +51,7 @@ module L_register
   [register_revoke_D_to_A] revoke_D_to_A_requested & A_leg_att_of_D & !revoked_A_by_D -> (A_leg_att_of_D'=false)&(revoked_A_by_D'=true); 
 endmodule
 
-module L_register_sync
+module L_register_ext
   // L's extra module for registration phase -- but outside player L
   // the variables that records the delegation requests by D, signature by A, 
   // cannot be inside player L's module (L_enact) 
@@ -61,7 +71,7 @@ module A_verify
   [request_to_verify_A_of_D] (A_leg_att_of_D) & (!verif_A_att_of_D_requested) -> true;
 endmodule
 
-module V_verify_sync_A
+module V_verify_ext
   verif_A_att_of_D_requested : bool init false;
   [request_to_verify_A_of_D] true -> (verif_A_att_of_D_requested'=true);
 endmodule
@@ -133,7 +143,7 @@ module A_enact // A's module for enacting phase -- inside player A
   [request_act2_A] !act_requested_A & req_total<req_max-> true; 
 endmodule
 
-module V_enact_sync_A // V's module for enacting phase -- but outside player V
+module V_enact_ext // V's module for enacting phase -- but outside player V
 // the variables that records the requests by A cannot be inside player V's module (V_enact) 
 // because they are both modified by A (who initiates a request) and by V 
 // (who resets the request after an execution or a rejection) 
