@@ -23,7 +23,7 @@ attorney protocol.
 
 ---
 
-## 🖥️ Using DpD with the PRISM-games GUI
+## 🖥️ Usage with PRISM-games GUI
 
 ### 1. Launch the PRISM-games GUI
 
