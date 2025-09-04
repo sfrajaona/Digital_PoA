@@ -1,5 +1,26 @@
 // Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
 // Last modified: Sep 02, 2025
+
+
+// Overview: Model checking strategic properties of PoA (Power of Attorney) 
+
+// Model components: 
+// - 1 donor D
+// - 1 attorney A1
+// - 1 verifier V 
+// - 1 legal party L
+// - 1 unspecified object o of D 
+// - 2 actions act1 and act2 applicable on o
+// - the donor D loses its permissions after delegating 
+// - a delegation covers both actions act1 and act2 on object o
+
+
+// Modelling approach (Synchronised actions):
+// Each of the four phases of the protocol
+// is modelled as a single synchronised step
+// where each of the four party participate (sometimes by idling) 
+// This synchronised step abstracts a set of actions
+// that needs to occur sequentially. 
 csg
 
 player D 
