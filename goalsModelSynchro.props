@@ -1,0 +1,10 @@
+filter(forall, A [ F executed_A ], issued_A_att_of_D)
+
+filter(exists, E [ F executed_act1_A ], issued_A_att_of_D)
+
+filter(forall, A [ G (!executed_A) ], revoked_A_by_D)
+
+E [ F executed_act1_A ]
+
+filter(exists, E [ F !executed_A ], revoked_A_by_D)
+

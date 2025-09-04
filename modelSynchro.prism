@@ -1,0 +1,137 @@
+// Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
+// Last modified: Sep 02, 2025
+csg
+
+player D 
+  D_register,
+  D_idle 
+endplayer
+
+player A1 
+  A_verify, 
+  A_register,
+  A_enact,
+  A_idle
+endplayer
+
+player V 
+  V_verify,
+  V_enact,
+  V_idle
+endplayer
+
+player L 
+  L_register,
+  L_verify,
+  L_idle
+endplayer
+
+const int max_steps = 5;
+formula model_bound = D_steps <= max_steps & A_steps <= max_steps & L_steps <= max_steps & V_steps <= max_steps; 
+formula D_steps = D_reg_steps + D_idle;
+formula A_steps = A_reg_steps + A_ver_steps + A_act_steps + A_idle;
+formula L_steps = L_reg_steps + L_ver_steps + L_idle;
+formula V_steps = V_ver_steps + V_act_steps + V_idle;
+formula executed_A = executed_act1_A | executed_act2_A;
+
+module D_register 
+  D_reg_steps : [0..max_steps] init 0; 
+  [deleg_D_to_A] (!issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (D_reg_steps' = D_reg_steps + 1);
+  [revoke_A_by_D] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (D_reg_steps' = D_reg_steps + 1);
+endmodule
+
+module A_register
+  A_reg_steps : [0..max_steps] init 0; 
+  [sign_deleg_D_to_A] (!issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (A_reg_steps'=A_reg_steps+1) ;
+endmodule
+
+module L_register
+  L_reg_steps : [0..max_steps] init 0; 
+  [register_deleg_D_to_A] (!issued_A_att_of_D) & model_bound -> (L_reg_steps'=L_reg_steps+1);
+  [register_revoke_D_to_A] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (L_reg_steps'=L_reg_steps+1);
+endmodule
+
+module registerPhase
+  issued_A_att_of_D : bool init false;
+  revoked_A_by_D : bool init false;
+  [deleg_D_to_A,  sign_deleg_D_to_A, register_deleg_D_to_A,  idle_V] true -> (issued_A_att_of_D'=true)  ;
+  [revoke_A_by_D, idle_A,            register_revoke_D_to_A, update_after_revoke_D_to_A] true -> (issued_A_att_of_D'=false) & (revoked_A_by_D'=true) ;
+endmodule
+
+module A_verify
+  A_ver_steps : [0..max_steps] init 0;
+  [request_to_verify_A_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D)& model_bound ->  (A_ver_steps'=A_ver_steps+1);
+endmodule
+
+module V_verify
+  V_ver_steps : [0..max_steps] init 0;
+  [verify_A_att_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D) & model_bound -> (V_ver_steps'=V_ver_steps+1);
+  [update_after_revoke_D_to_A] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (V_ver_steps'=V_ver_steps+1);
+endmodule
+
+module L_verify
+  L_ver_steps : [0..max_steps] init 0;
+  [attest_A_att_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D) & model_bound -> (L_ver_steps'=L_ver_steps+1);
+endmodule
+
+module verifyPhase
+  verified_A_of_D : bool init false;
+  
+  act1_permit_for_A_by_D : bool init false;
+  act2_permit_for_A_by_D : bool init false;
+
+  [idle_D, request_to_verify_A_of_D, attest_A_att_of_D, verify_A_att_of_D] true ->  (act1_permit_for_A_by_D'=true) & (act2_permit_for_A_by_D'=true) & (verified_A_of_D'=true); 
+
+  [revoke_A_by_D, idle_A, register_revoke_D_to_A, update_after_revoke_D_to_A] true -> (act1_permit_for_A_by_D'=false) & (act2_permit_for_A_by_D'=false);
+endmodule
+
+
+module V_enact
+  V_act_steps : [0..max_steps] init 0; 
+  [execute_act1_A] model_bound & act1_permit_for_A_by_D & !revoked_A_by_D -> (V_act_steps'=V_act_steps+1);
+  [reject_act1_A] model_bound & (!act1_permit_for_A_by_D) & !rejected_act1_A-> (V_act_steps'=V_act_steps+1);
+  [end_exec_act1_A] model_bound & executed_act1_A-> (V_act_steps'=V_act_steps+1);
+  [execute_act2_A] model_bound & act2_permit_for_A_by_D & !revoked_A_by_D -> (V_act_steps'=V_act_steps+1);
+  [reject_act2_A] model_bound & (!act2_permit_for_A_by_D) & !rejected_act2_A -> (V_act_steps'=V_act_steps+1);
+  [end_exec_act2_A] model_bound & executed_act2_A-> (V_act_steps'=V_act_steps+1);
+endmodule
+
+module A_enact
+  A_act_steps : [0..max_steps] init 0; 
+  [request_act1_A] model_bound -> (A_act_steps'=A_act_steps+1);
+  [request_act2_A] model_bound -> (A_act_steps'=A_act_steps+1);
+endmodule
+
+module enactPhase
+  enact_sync: bool init false;
+  executed_act1_A : bool init false;
+  executed_act2_A : bool init false;
+  rejected_act1_A : bool init false;
+  rejected_act2_A : bool init false;
+  [idle_D, request_act1_A, idle_L, execute_act1_A] true -> (executed_act1_A'=true); 
+  [idle_D, request_act2_A, idle_L, execute_act2_A] true -> (executed_act2_A'=true);
+  [idle_D, idle_A, idle_L, end_exec_act1_A] true -> (executed_act1_A'=false); 
+  [idle_D, idle_A, idle_L, end_exec_act2_A] true -> (executed_act2_A'=false);
+  [idle_D, request_act1_A, idle_L, reject_act1_A] true -> (rejected_act1_A'=true); 
+  [idle_D, request_act2_A, idle_L, reject_act2_A] true -> (rejected_act2_A'=true); 
+endmodule
+
+module D_idle
+  D_idle:[0..10] init 0;
+  [idle_D] model_bound -> (D_idle' = D_idle+1); 
+endmodule
+
+module A_idle
+  A_idle:[0..10] init 0;
+  [idle_A] model_bound -> (A_idle' = A_idle+1); 
+endmodule
+
+module L_idle
+  L_idle:[0..10] init 0;
+  [idle_L] model_bound -> (L_idle' = L_idle+1); 
+endmodule
+
+module V_idle
+  V_idle:[0..10] init 0;
+  [idle_V] model_bound -> (V_idle' = V_idle+1); 
+endmodule

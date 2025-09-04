@@ -25,7 +25,7 @@ csg
 
 player D D_register, D_idle endplayer
 
-player A1 A_verify, A_register, A_enact endplayer
+player A1 A_verify, A_register, A_enact, A_idle endplayer
 
 player L L_register endplayer
 
@@ -128,12 +128,17 @@ formula act_requested_A = act1_requested_A | act2_requested_A;
 formula executed_A = act1_executed_A | act2_executed_A;
 formula authorised_A = act1_authorised_A | act2_authorised_A;
 
-// formula idling = idling_A + idling_D;
-formula idling = idling_D;
+formula idling = idling_A + idling_D;
+// formula idling = idling_D;
 
 module D_idle
   idling_D : [1..10] init 0; 
   [idle_D] idling <= idle_max -> (idling_D'=idling_D+1); 
+endmodule
+
+module A_idle
+  idling_A : [1..10] init 0; 
+  [idle_A] idling <= idle_max -> (idling_A'=idling_A+1); 
 endmodule
 
 module A_enact // A's module for enacting phase -- inside player A
