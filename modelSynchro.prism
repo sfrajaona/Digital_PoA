@@ -47,27 +47,31 @@ player L
   L_idle
 endplayer
 
-const int max_steps = 5;
-formula model_bound = D_steps <= max_steps & A_steps <= max_steps & L_steps <= max_steps & V_steps <= max_steps; 
-formula D_steps = D_reg_steps + D_idle;
-formula A_steps = A_reg_steps + A_ver_steps + A_act_steps + A_idle;
-formula L_steps = L_reg_steps + L_ver_steps + L_idle;
-formula V_steps = V_ver_steps + V_act_steps + V_idle;
+const int max_phases = 2;
+const int max_stutter = 4;
+formula step_bound = max(D_steps,A_steps,L_steps,V_steps) <= max_phases;
+formula stutter_bound = max(D_idle,A_idle,L_idle,V_idle) <= max_stutter ;
+formula model_bound = stutter_bound & step_bound ;
+formula D_steps = D_reg_steps ;
+formula A_steps = max (A_reg_steps, A_ver_steps, A_act_steps) ;
+formula L_steps = max (L_reg_steps, L_ver_steps);
+formula V_steps = max (V_ver_steps, V_act_steps);
 formula executed_A = executed_act1_A | executed_act2_A;
 
+
 module D_register 
-  D_reg_steps : [0..max_steps] init 0; 
+  D_reg_steps : [0..max_phases] init 0; 
   [deleg_D_to_A] (!issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (D_reg_steps' = D_reg_steps + 1);
   [revoke_A_by_D] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (D_reg_steps' = D_reg_steps + 1);
 endmodule
 
 module A_register
-  A_reg_steps : [0..max_steps] init 0; 
+  A_reg_steps : [0..max_phases] init 0; 
   [sign_deleg_D_to_A] (!issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (A_reg_steps'=A_reg_steps+1) ;
 endmodule
 
 module L_register
-  L_reg_steps : [0..max_steps] init 0; 
+  L_reg_steps : [0..max_phases] init 0; 
   [register_deleg_D_to_A] (!issued_A_att_of_D) & model_bound -> (L_reg_steps'=L_reg_steps+1);
   [register_revoke_D_to_A] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (L_reg_steps'=L_reg_steps+1);
 endmodule
@@ -80,18 +84,18 @@ module registerPhase
 endmodule
 
 module A_verify
-  A_ver_steps : [0..max_steps] init 0;
+  A_ver_steps : [0..max_phases] init 0;
   [request_to_verify_A_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D)& model_bound ->  (A_ver_steps'=A_ver_steps+1);
 endmodule
 
 module V_verify
-  V_ver_steps : [0..max_steps] init 0;
+  V_ver_steps : [0..max_phases] init 0;
   [verify_A_att_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D) & model_bound -> (V_ver_steps'=V_ver_steps+1);
   [update_after_revoke_D_to_A] (issued_A_att_of_D) & (!revoked_A_by_D) & model_bound -> (V_ver_steps'=V_ver_steps+1);
 endmodule
 
 module L_verify
-  L_ver_steps : [0..max_steps] init 0;
+  L_ver_steps : [0..max_phases] init 0;
   [attest_A_att_of_D] (issued_A_att_of_D)&(!verified_A_of_D)& (!revoked_A_by_D) & model_bound -> (L_ver_steps'=L_ver_steps+1);
 endmodule
 
@@ -108,7 +112,7 @@ endmodule
 
 
 module V_enact
-  V_act_steps : [0..max_steps] init 0; 
+  V_act_steps : [0..max_phases] init 0; 
   [execute_act1_A] model_bound & act1_permit_for_A_by_D & !revoked_A_by_D -> (V_act_steps'=V_act_steps+1);
   [reject_act1_A] model_bound & (!act1_permit_for_A_by_D) & !rejected_act1_A-> (V_act_steps'=V_act_steps+1);
   [end_exec_act1_A] model_bound & executed_act1_A-> (V_act_steps'=V_act_steps+1);
@@ -118,7 +122,7 @@ module V_enact
 endmodule
 
 module A_enact
-  A_act_steps : [0..max_steps] init 0; 
+  A_act_steps : [0..max_phases] init 0; 
   [request_act1_A] model_bound -> (A_act_steps'=A_act_steps+1);
   [request_act2_A] model_bound -> (A_act_steps'=A_act_steps+1);
 endmodule
@@ -138,21 +142,21 @@ module enactPhase
 endmodule
 
 module D_idle
-  D_idle:[0..10] init 0;
+  D_idle:[0..max_stutter] init 0;
   [idle_D] model_bound -> (D_idle' = D_idle+1); 
 endmodule
 
 module A_idle
-  A_idle:[0..10] init 0;
+  A_idle:[0..max_stutter] init 0;
   [idle_A] model_bound -> (A_idle' = A_idle+1); 
 endmodule
 
 module L_idle
-  L_idle:[0..10] init 0;
+  L_idle:[0..max_stutter] init 0;
   [idle_L] model_bound -> (L_idle' = L_idle+1); 
 endmodule
 
 module V_idle
-  V_idle:[0..10] init 0;
+  V_idle:[0..max_stutter] init 0;
   [idle_V] model_bound -> (V_idle' = V_idle+1); 
 endmodule
