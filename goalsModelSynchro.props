@@ -1,3 +1,12 @@
+// List of properties for modelSynchro.prism
+// Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
+// Last Modified: Tue Sep 09 09:00 a.m. 2025 BST
+// Overview: Model checking strategic properties of PoA (Power of Attorney) 
+
+
+// Liveness to Enactment: If a contract is issued, allowed, and not revoked, then (under fair scheduling) the system can progress to execution
+
+
 filter(forall, A [ F executed_A ], issued_A_att_of_D)
 
 filter(exists, E [ F executed_act1_A ], issued_A_att_of_D)

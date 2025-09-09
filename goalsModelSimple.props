@@ -1,6 +1,6 @@
 // List of properties for modelSimple.prism
 // Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
-// Last modified: Sep 01, 2025
+// Last Modified: Tue Sep 09 09:00 a.m. 2025 BST
 // Overview: Model checking strategic properties of PoA (Power of Attorney) 
 
 // Property Name: Liveness to Enactment 1 (original) 
