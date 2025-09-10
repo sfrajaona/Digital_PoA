@@ -61,10 +61,10 @@ formula L_steps = max (L_reg_steps, L_ver_steps);
 formula V_steps = max (V_ver_steps, V_act_steps);
 formula executed_A = executed_act1_A | executed_act2_A;
 
-// D_actions: propose_deleg_D_to_A, revoke_A_by_D
-// A_actions: consent_deleg_D_to_A, present_deleg_A_of_D, request_act1_A, request_act2_A
-// L_actions: issue_deleg_D_to_A, publish_revoke_D_to_A, attest_A_att_of_D
-// V_actions: query_A_att_of_D, update_after_revoke_D_to_A, accept_act1_A, reject_act1_A, execute_act1_A, accept_act2_A, reject_act2_A, execute_act2_A
+// D_actions: propose_deleg_D_to_A, revoke_A_by_D, idle_D
+// A_actions: consent_deleg_D_to_A, present_deleg_A_of_D, request_act1_A, request_act2_A, idle_A
+// L_actions: issue_deleg_D_to_A, publish_revoke_D_to_A, attest_A_att_of_D, idle_L
+// V_actions: query_A_att_of_D, update_after_revoke_D_to_A, accept_act1_A, reject_act1_A, execute_act1_A, accept_act2_A, reject_act2_A, execute_act2_A, idle_V
 
 
 module D_register 
@@ -87,8 +87,8 @@ endmodule
 module registerPhase
   issued_A_att_of_D : bool init false;
   revoked_A_by_D : bool init false;
-  [propose_deleg_D_to_A,consent_deleg_D_to_A, issue_deleg_D_to_A,  idle_V] true -> (issued_A_att_of_D'=true)  ;
-  [revoke_A_by_D, idle_A,publish_revoke_D_to_A, update_after_revoke_D_to_A] true -> (issued_A_att_of_D'=false) & (revoked_A_by_D'=true) ;
+  [propose_deleg_D_to_A,consent_deleg_D_to_A, issue_deleg_D_to_A] true -> (issued_A_att_of_D'=true)  ;
+  [revoke_A_by_D,publish_revoke_D_to_A, update_after_revoke_D_to_A] true -> (issued_A_att_of_D'=false) & (revoked_A_by_D'=true) ;
 endmodule
 
 module A_verify
@@ -113,9 +113,9 @@ module verifyPhase
   act1_allowed_for_A_by_D : bool init false;
   act2_allowed_for_A_by_D : bool init false;
 
-  [idle_D, present_deleg_A_of_D, attest_A_att_of_D, query_A_att_of_D] true ->  (act1_allowed_for_A_by_D'=true) & (act2_allowed_for_A_by_D'=true) & (verified_A_of_D'=true); 
+  [present_deleg_A_of_D, attest_A_att_of_D, query_A_att_of_D] true ->  (act1_allowed_for_A_by_D'=true) & (act2_allowed_for_A_by_D'=true) & (verified_A_of_D'=true); 
 
-  [revoke_A_by_D, idle_A, publish_revoke_D_to_A, update_after_revoke_D_to_A] true -> (act1_allowed_for_A_by_D'=false) & (act2_allowed_for_A_by_D'=false);
+  [revoke_A_by_D, publish_revoke_D_to_A, update_after_revoke_D_to_A] true -> (act1_allowed_for_A_by_D'=false) & (act2_allowed_for_A_by_D'=false);
 endmodule
 
 
@@ -141,12 +141,12 @@ module enactPhase
   executed_act2_A : bool init false;
   rejected_act1_A : bool init false;
   rejected_act2_A : bool init false;
-  [idle_D, request_act1_A, idle_L, accept_act1_A] true -> (executed_act1_A'=true); 
-  [idle_D, request_act2_A, idle_L, accept_act2_A] true -> (executed_act2_A'=true);
-  [idle_D, idle_A, idle_L, execute_act1_A] true -> (executed_act1_A'=false); 
-  [idle_D, idle_A, idle_L, execute_act2_A] true -> (executed_act2_A'=false);
-  [idle_D, request_act1_A, idle_L, reject_act1_A] true -> (rejected_act1_A'=true); 
-  [idle_D, request_act2_A, idle_L, reject_act2_A] true -> (rejected_act2_A'=true); 
+  [request_act1_A, accept_act1_A] true -> (executed_act1_A'=true); 
+  [request_act2_A, accept_act2_A] true -> (executed_act2_A'=true);
+  [execute_act1_A] true -> (executed_act1_A'=false); 
+  [execute_act2_A] true -> (executed_act2_A'=false);
+  [request_act1_A, reject_act1_A] true -> (rejected_act1_A'=true); 
+  [request_act2_A, reject_act2_A] true -> (rejected_act2_A'=true); 
 endmodule
 
 module D_idle

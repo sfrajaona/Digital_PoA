@@ -1,19 +1,48 @@
-// List of properties for modelSynchro.prism
-// Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
-// Last Modified: Tue Sep 09 09:00 a.m. 2025 BST
-// Overview: Model checking strategic properties of PoA (Power of Attorney) 
+// Liveness to Enactment
+// FALSE original: AG((issued ∧allowed ∧¬revoked)→AF executed)
+filter(forall, A [ F executed_A ], issued_A_att_of_D&act1_allowed_for_A_by_D&!revoked_A_by_D)
 
+// Liveness to Enactment
+// FALSE modified: AG((issued ∧allowed ∧¬revoked)→EF executed)
+// *** THis should be true, but it is false as a consequence of bounding
+// or model
+filter(forall, E [ F executed_A ], issued_A_att_of_D&act1_allowed_for_A_by_D&!revoked_A_by_D)
 
-// Liveness to Enactment: If a contract is issued, allowed, and not revoked, then (under fair scheduling) the system can progress to execution
+// Scope-Boundedness part 2
+// AG((¬allowed)→AG¬executed)
+// FALSE: (original)  u can be not allowed once but in the future u may be allowed and execute
+filter(forall, A [ G (!executed_act1_A) ], !act1_allowed_for_A_by_D)
 
+// Scope-Boundedness part 2
+// (modified) 
+A [ !executed_act1_A U act1_allowed_for_A_by_D]
 
-filter(forall, A [ F executed_A ], issued_A_att_of_D)
+// Scope-Boundedness part 2
+// (modified) 
+A [executed_act1_A => act1_allowed_for_A_by_D]
+
+// End to end correctness AG((issued ∧allowed ∧¬revoked)→⟨⟨A,V⟩⟩F executed).
+// FALSE: original
+filter(forall, <<A1,V>>P>0 [ F executed_act2_A ], act2_allowed_for_A_by_D&!revoked_A_by_D)
+
+// End to end correctness AG((issued ∧allowed ∧¬revoked)→⟨⟨A,V⟩⟩F executed).
+// TRUE? : added condition on model size allowance
+filter(forall, <<A1,V>>P>0 [ F executed_act2_A ], model_bound_x&act2_allowed_for_A_by_D&!revoked_A_by_D)
+
+// End to end correctness AG((issued ∧allowed ∧¬revoked)→⟨⟨A,V⟩⟩F executed).
+// FALSE: original 
+filter(forall, <<D,A1,L,V>>P>0 [ F executed_act2_A ], act2_allowed_for_A_by_D&!revoked_A_by_D)
+
+// End to end correctness AG((issued ∧allowed ∧¬revoked)→⟨⟨A,V⟩⟩F executed).
+// TRUE: added condition on model size allowance
+filter(forall, <<D,A1,L,V>>P>0 [ F executed_act2_A ], model_bound_x&act2_allowed_for_A_by_D&!revoked_A_by_D)
 
 filter(exists, E [ F executed_act1_A ], issued_A_att_of_D)
 
-filter(forall, A [ G (!executed_A) ], revoked_A_by_D)
 
-E [ F executed_act1_A ]
+// *** TRUE: Safety under Revocation 2  
+// Description: we needed to strengthen the antecedent, to make sure there is no execution happening simultaneously with the revocation
+filter(forall, A [ G (!executed_A) ], revoked_A_by_D &!executed_A)
 
 filter(exists, E [ F !executed_A ], revoked_A_by_D)
 

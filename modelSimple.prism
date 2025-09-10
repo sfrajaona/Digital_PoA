@@ -36,19 +36,19 @@ const int req_max = 8;
 const int idle_max = 10;
 
 module D_register
-  [request_deleg_D_to_A] (!A_leg_att_of_D) & (!revoked_A_by_D) & (req_total<req_max) & (!deleg_D_to_A_requested) -> true;
-  [request_revoke_A_by_D] (A_leg_att_of_D) & (!revoke_D_to_A_requested) & (!revoked_A_by_D)-> true;
+  [propose_deleg_D_to_A] (!A_leg_att_of_D) & (!revoked_A_by_D) & (req_total<req_max) & (!deleg_D_to_A_requested) -> true;
+  [revoke_A_by_D] (A_leg_att_of_D) & (!revoke_D_to_A_requested) & (!revoked_A_by_D)-> true;
 endmodule
 
 module A_register
-  [sign_deleg_D_to_A] (deleg_D_to_A_requested) & (!deleg_D_to_A_signed) -> true ;
+  [consent_deleg_D_to_A] (deleg_D_to_A_requested) & (!deleg_D_to_A_signed) -> true ;
 endmodule
 
 module L_register
   A_leg_att_of_D : bool init false;
   revoked_A_by_D : bool init false;
-  [register_deleg_D_to_A] deleg_D_to_A_signed & (!revoked_A_by_D) & !A_leg_att_of_D -> (A_leg_att_of_D'=true); 
-  [register_revoke_D_to_A] revoke_D_to_A_requested & A_leg_att_of_D & !revoked_A_by_D -> (A_leg_att_of_D'=false)&(revoked_A_by_D'=true); 
+  [issue_deleg_D_to_A] deleg_D_to_A_signed & (!revoked_A_by_D) & !A_leg_att_of_D -> (A_leg_att_of_D'=true); 
+  [publish_revoke_D_to_A] revoke_D_to_A_requested & A_leg_att_of_D & !revoked_A_by_D -> (A_leg_att_of_D'=false)&(revoked_A_by_D'=true); 
 endmodule
 
 module L_register_ext
@@ -60,20 +60,20 @@ module L_register_ext
   deleg_D_to_A_requested : bool init false; 
   revoke_D_to_A_requested : bool init false; 
   deleg_D_to_A_signed : bool init false;
-  [request_deleg_D_to_A] true -> (deleg_D_to_A_requested'=true) & (delegreq'=delegreq+1) ; 
-  [request_revoke_A_by_D]  true -> (revoke_D_to_A_requested'=true)& (delegreq'=delegreq+1); 
-  [sign_deleg_D_to_A] true -> (deleg_D_to_A_signed'=true) ;
-  [register_deleg_D_to_A] true ->(deleg_D_to_A_requested' = false) & (deleg_D_to_A_signed' = false) ;
+  [propose_deleg_D_to_A] true -> (deleg_D_to_A_requested'=true) & (delegreq'=delegreq+1) ; 
+  [revoke_A_by_D]  true -> (revoke_D_to_A_requested'=true)& (delegreq'=delegreq+1); 
+  [consent_deleg_D_to_A] true -> (deleg_D_to_A_signed'=true) ;
+  [issue_deleg_D_to_A] true ->(deleg_D_to_A_requested' = false) & (deleg_D_to_A_signed' = false) ;
 endmodule
 
 
 module A_verify
-  [request_to_verify_A_of_D] (A_leg_att_of_D) & (!verif_A_att_of_D_requested) -> true;
+  [present_deleg_A_of_D] (A_leg_att_of_D) & (!verif_A_att_of_D_requested) -> true;
 endmodule
 
 module V_verify_ext
   verif_A_att_of_D_requested : bool init false;
-  [request_to_verify_A_of_D] true -> (verif_A_att_of_D_requested'=true);
+  [present_deleg_A_of_D] true -> (verif_A_att_of_D_requested'=true);
 endmodule
 
 module V_verify 
@@ -95,8 +95,8 @@ endmodule
 // - there is a permit for it (issued) 
 // - or there is not an action under execution, or 
 // - or there has been a revocation (not revoked) 
-formula act1_grant_cond = (act1_permit_for_A_by_D & !act1_authorised_A & !revoked_A_by_D);
-formula act2_grant_cond = (act2_permit_for_A_by_D & !act2_authorised_A & !revoked_A_by_D);
+formula act1_allow_cond = (act1_permit_for_A_by_D & !act1_allowed_A & !revoked_A_by_D);
+formula act2_allow_cond = (act2_permit_for_A_by_D & !act2_allowed_A & !revoked_A_by_D);
 
 // Similarly V rejects an act request from A if 
 // - there is no permit for it 
@@ -105,20 +105,20 @@ formula act2_grant_cond = (act2_permit_for_A_by_D & !act2_authorised_A & !revoke
 module V_enact
 
 
-  act1_authorised_A : bool init false;
-  act2_authorised_A : bool init false;
+  act1_allowed_A : bool init false;
+  act2_allowed_A : bool init false;
   act1_rejected_A : bool init false;
   act2_rejected_A : bool init false;
 
   act1_executed_A : bool init false;
   act2_executed_A : bool init false;
 
-  [grant_act1_A] act1_requested_A & act1_grant_cond & !act1_authorised_A  -> (act1_authorised_A'=true);
-  [grant_act2_A] act2_requested_A & act2_grant_cond & !act2_authorised_A -> (act2_authorised_A'=true);
-  [reject_act1_A] act1_requested_A & !act1_grant_cond & !act1_rejected_A -> (act1_rejected_A'=true);
-  [reject_act2_A] act2_requested_A & !act2_grant_cond & !act2_rejected_A -> (act2_rejected_A'=true);
-  [execute_act1_A] act1_authorised_A & !revoked_A_by_D & act1_requested_A ->  (act1_executed_A'=true); 
-  [execute_act2_A] act2_authorised_A & !revoked_A_by_D & act2_requested_A ->  (act2_executed_A'=true); 
+  [allow_act1_A] act1_requested_A & act1_allow_cond & !act1_allowed_A  -> (act1_allowed_A'=true);
+  [allow_act2_A] act2_requested_A & act2_allow_cond & !act2_allowed_A -> (act2_allowed_A'=true);
+  [reject_act1_A] act1_requested_A & !act1_allow_cond & !act1_rejected_A -> (act1_rejected_A'=true);
+  [reject_act2_A] act2_requested_A & !act2_allow_cond & !act2_rejected_A -> (act2_rejected_A'=true);
+  [execute_act1_A] act1_allowed_A & !revoked_A_by_D & act1_requested_A ->  (act1_executed_A'=true); 
+  [execute_act2_A] act2_allowed_A & !revoked_A_by_D & act2_requested_A ->  (act2_executed_A'=true); 
   [reset_act1_A] (act1_rejected_A | act1_executed_A) & act1_requested_A -> (act1_rejected_A'=false) & (act1_executed_A'=false); 
   [reset_act2_A] (act2_rejected_A | act2_executed_A) & act2_requested_A -> (act2_rejected_A'=false) & (act2_executed_A'=false); 
 endmodule 
@@ -126,7 +126,7 @@ endmodule
 formula req_total = act_req_A + delegreq;
 formula act_requested_A = act1_requested_A | act2_requested_A;
 formula executed_A = act1_executed_A | act2_executed_A;
-formula authorised_A = act1_authorised_A | act2_authorised_A;
+formula allowed_A = act1_allowed_A | act2_allowed_A;
 
 formula idling = idling_A + idling_D;
 // formula idling = idling_D;

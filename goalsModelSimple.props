@@ -1,33 +1,33 @@
 // List of properties for modelSimple.prism
 // Authors: F. Rajaona, H. Treharne, I. Boureanu, S. Radomirovic
-// Last Modified: Tue Sep 09 09:00 a.m. 2025 BST
+// Last Modified: Thu Sep 11 12:00 a.m. 2025 BST
 // Overview: Model checking strategic properties of PoA (Power of Attorney) 
 
 // Property Name: Liveness to Enactment 1 (original) 
 // Description: If a contract is issued, allowed, and not revoked, then (under fair scheduling) 
 // the system can progress to execution:
 
-// FALSE: Liveness to Enactment 1 (original) 
+// FALSE: Liveness to Enactment 1 (original ) AG((issued ∧allowed ∧¬revoked)→AF executed)
 // in fact this should be TRUE if we
 // allow the model to be unbounded. Eventually the verifier will execute 
 // any requested action that is permitted.
 filter(forall, A [ F act1_executed_A ], act1_requested_A&act1_permit_for_A_by_D&!revoked_A_by_D)
 
-// TRUE: Liveness to Enactment 2 
+// TRUE: Liveness to Enactment 2 EG((issued ∧allowed ∧¬revoked)→EF executed)
 // Description: Note that we need to change the inner AF into EF from Liveness to Enactment 1
 filter(exists, E [ F act1_executed_A ], act1_requested_A&act1_permit_for_A_by_D&!revoked_A_by_D)
 
-// TRUE: Liveness to Enactment 3 (authorised capture the condisions above)
+// TRUE: Liveness to Enactment 3 (allowed capture the condisions above)
 // Description: changed AF into EF
-filter(exists, E [ F act1_executed_A ], act1_authorised_A)
+filter(exists, E [ F act1_executed_A ], act1_allowed_A)
 
 // FALSE: Liveness to Enactment 5
 // Description: for any execution, with inner EF
-filter(forall, E [ F executed_A ], act_requested_A&authorised_A)
+filter(forall, E [ F executed_A ], act_requested_A&allowed_A)
 
 // FALSE: Liveness to Enactment 5
 // Description: for any execution + bound condition + inner EF
-filter(forall, E [ F executed_A ], act_requested_A&authorised_A&(req_total+1<req_max))
+filter(forall, E [ F executed_A ], act_requested_A&allowed_A&(req_total+1<req_max))
 
 // Property Name: Safety under Revocation: 
 // Description: After revocation, the action is never executed. 
@@ -35,7 +35,7 @@ filter(forall, E [ F executed_A ], act_requested_A&authorised_A&(req_total+1<req
 // FALSE: Safety under Revocation 1 (original) . 
 filter(forall, A [ G (!executed_A) ], revoked_A_by_D)
 
-// *** TRUE: Safety under Revocation 2 (original) 
+// *** TRUE: Safety under Revocation 2  
 // Description: we needed to strengthen the antecedent, to make sure there is no execution happening simultaneously with the revocation
 filter(forall, A [ G (!executed_A) ], revoked_A_by_D&(!executed_A))
 
@@ -65,13 +65,17 @@ filter(forall, <<A1,V>>P>0 [ F act1_executed_A ], !act1_executed_A&act1_requeste
 
 // FALSE: End to end correctness 
 // Description: original + bound conditions + all players in strategy
-filter(forall, <<D,A1,L,V>>P>0 [ F act1_executed_A ], act1_requested_A & act1_grant_cond & !act1_authorised_A & (req_total+2<req_max) & (idling+2<idle_max))
+filter(forall, <<D,A1,L,V>>P>0 [ F act1_executed_A ], act1_requested_A & act1_allow_cond & !act1_allowed_A & (req_total+2<req_max) & (idling+2<idle_max))
+
+// TRUE:  End to end correctness (not good because "to request" should be the strategy to achieve the executed goal) 
+// Description: original, but added act_requested as precondition
+filter (forall, <<A1,V>> P>0  [F act2_executed_A], act2_allowed_A &!revoked_A_by_D & act2_requested_A) 
 
 // *** TRUE:  End to end correctness 
-// Description: original, but fixed the guards 
-filter (forall, <<A1,V>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
+// Description: original, but added model size allowance condition 
+filter (forall, <<A1,V>> P>0  [F act2_executed_A], act2_allowed_A &!revoked_A_by_D & (req_total+1<req_max)&(idling+1<idle_max)) 
 
 // *** FALSE:  End to end correctness
 // Description: the property fails when V is not part of the strategic opertor
-filter (forall, <<A1>> P>0  [F act2_executed_A], act2_authorised_A &!revoked_A_by_D & act2_requested_A) 
+filter (forall, <<A1>> P>0  [F act2_executed_A], act2_allowed_A &!revoked_A_by_D & act2_requested_A) 
 
